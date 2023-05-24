@@ -1,0 +1,581 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+function ListarTemplates() {
+    $path = "templates/";
+    $diretorio = dir($path);
+
+    echo "Lista de Arquivos do diretório '<strong>" . $path . "</strong>':<br />";
+    while ($arquivo = $diretorio->read()) {
+        echo "<a href='" . $path . $arquivo . "'>" . $arquivo . "</a><br />";
+    }
+    $diretorio->close();
+}
+
+function assinatura_temporaria() {
+    
+}
+
+function NiveisLinguas() {
+    //$niveis_tipos = array("INICIANTE", "A1.1", "A1.2", "A2.1", "A2.2", "B1.1", "B1.2", "B2.1", "B2.2", "C1.1", "C1.2", "C1.3");
+
+    $niveis_tipos = array(
+        "INICIANTE" => "É capaz de dizer e de perguntar o dia, a hora e a data, usar formas básicas de saudação, preencher formulários simples com dados pessoais: nome, morada, nacionalidade, estado civil.",
+        "A1" => "É capaz de compreender e usar expressões familiares e cotidianas, enunciados muito simples para satisfazer necessidades concretas; pode apresentar-se e apresentar outros, fazer perguntas e dar respostas sobre aspectos pessoais como o local onde vive, as pessoas que conhece e as coisas que tem; pode comunicar-se de modo simples se o interlocutor falar lenta e distintamente.",
+        "A2" => "É capaz de compreender frases isoladas e expressões frequentes relacionadas a áreas de prioridade imediata; é capaz de comunicar-se em tarefas simples e em rotinas que exigem apenas uma troca de informação direta sobre assuntos que lhe são familiares e habituais; pode descrever de modo simples sua formação, o meio circundante e referir-se a assuntos relacionados a necessidades imediatas.",
+        "B1" => "É capaz de compreender as questões principais quando é usada linguagem clara e padronizada e os assuntos lhe são familiares; é capaz de lidar com a maioria das situações encontradas na região onde se fala a língua-alvo, de produzir um discurso simples e coerente sobre assuntos que lhe são familiares ou de interesse pessoal; pode descrever experiências e eventos, sonhos, esperanças e ambições, bem como expor brevemente razões e justificativas para uma opinião ou um projeto.",
+        "B2" => "É capaz de compreender as ideias principais em textos complexos sobre assuntos concretos e abstratos, incluindo discussões técnicas na sua área de especialidade. É capaz de se comunicar com certo grau de espontaneidade com falantes nativos, sem que haja tensão de parte a parte. É capaz de exprimir-se de modo claro e pormenorizado sobre uma grande variedade de temas e explicar um ponto de vista sobre um tema da atualidade, expondo as vantagens e os inconvenientes de várias possibilidades.",
+        "C1" => "É capaz de compreender um vasto número de textos longos e exigentes, reconhecendo os seus significados implícitos, de exprimir-se de forma fluente e espontânea sem precisar pesquisar muitas palavras; é capaz de usar a língua de modo flexível e eficaz para fins sociais, acadêmicos e profissionais; exprimir-se sobre temas complexos de forma clara e bem estruturada, manifestando o domínio de mecanismos de organização, de articulação e de coesão do discurso.",
+        "C2" => "É capaz de compreender praticamente tudo o que ouve ou lê, de resumir as informações recolhidas em diversas fontes orais e escritas, reconstruindo argumentos e fatos de modo coerente; é capaz de exprimirse espontaneamente de modo fluente e com exatidão e de distinguir finas variações de significado em situações complexas.",
+        "Não se aplica" => "",
+    );
+
+    return $niveis_tipos;
+}
+
+function UploadCsv() {
+    $data['error'] = '';
+    // Define as configurações para o upload do CSV
+    $config['upload_path'] = './uploads/';
+    $config['allowed_types'] = 'csv';
+    $config['max_size'] = '1000';
+    $this->load->library('upload', $config);
+    // Se o upload falhar, exibe mensagem de erro na view
+    if (!$this->upload->do_upload('csvfile')) {
+        $data['error'] = $this->upload->display_errors();
+        $this->load->view('main', $data);
+    } else {
+        $file_data = $this->upload->data();
+        $file_path = './uploads/' . $file_data['file_name'];
+        return $file_path;
+    }
+}
+
+//    public function enviar($dados_curso, $dados) {
+function enviar($dados) {
+
+    $link = anchor('https://netel.ufabc.edu.br/certificador', 'https://netel.ufabc.edu.br/certificador', 'target="blank"');
+    if ($dados['corpo'] == NULL) {
+        $corpo = utf8_decode("O Núcleo Educacional de Tecnologias e Línguas - UFABC informa que o certificado do evento:<br/><br/>"
+                . "<b>" . $dados['nomeCurso'] . "</b><br/><br/>"
+                . "está disponível no link a seguir: " . $dados['link'] . "<br/><br/>"
+                . "ou acesse a página: $link .<br/><br/>"
+                . "<br/>--- Mensagem automática do sistema ---");
+    }
+
+    require_once './phpmailer/PHPMailerAutoload.php';
+
+    if ($_SERVER['SERVER_NAME'] == 'netel.ufabc.edu.br') {
+        if ($_SESSION['status'] == 1) {//status 1 = NETEL
+            $host = 'smtp.ufabc.edu.br';
+            $port = 587;
+            $smtpSecure = 'tls';
+            $contaemail = 'suporte.ead@ufabc.edu.br';
+            $pass = '1,F{ohRI8u57';
+        } elseif ($_SESSION['status'] == 2) {//status 2 = Idiomas
+            $host = 'smtp.ufabc.edu.br';
+            $port = 587;
+            $smtpSecure = 'tls';
+            $contaemail = 'suporte.ead@ufabc.edu.br';//'idiomas.netel@ufabc.edu.br';
+            $pass = '1,F{ohRI8u57';
+        }
+
+    } else {
+
+        $host = 'smtp.gmail.com';
+        $port = 465;
+        $smtpSecure = 'ssl';
+        $contaemail = 'suporte.tidia@gmail.com';
+        $pass = 'ufabc!@#tidia';
+    }
+
+// O BLOCO ABAIXO INICIALIZA O ENVIO
+    $mail = new PHPMailer; // INICIA A CLASSE PHPMAILER
+    $mail->IsSMTP(); //ESSA OP��O HABILITA O ENVIO DE SMTP
+    $mail->Host = $host; //'smtp.gmail.com'; //SERVIDOR DE SMTP, USE smtp.SeuDominio.com OU smtp.hostsys.com.br 
+    $mail->Port = $port; //gmail 465 ou ufabc 587
+    $mail->SMTPAuth = true; //ATIVA O SMTP AUTENTICADO
+    $mail->SMTPSecure = $smtpSecure; //gmail ssl e ufabc tls
+    $mail->Username = $contaemail; //    $mail->Username = "suporte.tidia@gmail.com"; //"suporte.tidia@ufabc.edu.br"; //EMAIL PARA SMTP AUTENTICADO (pode ser qualquer conta de email do seu domínio)
+    $mail->Password = $pass; //    SENHA DO EMAIL PARA SMTP AUTENTICADO
+    $mail->From = "$contaemail"; //    $mail->From = "suporte.tidia@gmail.com"; //E-MAIL DO REMETENTE
+    $mail->FromName = "NETEL - UFABC"; //NOME DO REMETENTE
+    $mail->WordWrap = 50; // ATIVAR QUEBRA DE LINHA
+    $mail->IsHTML(true); //ATIVA MENSAGEM NO FORMATO HTML
+    $mail->Subject = 'Certificado NETEL-UFABC'; //ASSUNTO DA MENSAGEM
+//        $mail->AddAddress($email); //E-MAIL DO DESINATÁRIO, NOME DO DESINATÁRIO --> AS VARIÁVEIS ALI PODEM FAZER REFERENCIA A DADOS VINDO DE $_GET OU $_POST, OU AINDA DO BANCO DE DADOS
+//        $path = './uploads/akira.pdf';
+//        $anexo = $mail->AddAttachment($path, 'akira.pdf');
+//        $this->email->attach('./uploads/cert/' . $dados_aluno['nome'] . '.pdf');
+//        $email = 'fabiomoto@yahoo.com.br';
+
+    $email = $dados['email'];
+
+    $mail->Body = $corpo;
+    $mail->AddAddress($email);
+    $enviou = $mail->Send();
+    $mail->ClearAllRecipients();  //Limpa os destinatários e os anexos (DEMORA MUITO)
+    $mail->ClearAttachments();
+
+    if ($enviou) {
+        return TRUE;
+    } else {
+//            echo $mail->print_debugger();
+        echo $mail->ErrorInfo;
+        return FALSE;
+    }
+
+
+//        foreach ($alunos as $item) {
+    // consulta o BANCO + LOOP ( while ) e depois coloca o seguinte...
+//https://forum.imasters.com.br/topic/471136-passar-2-parametros-pela-url/
+//echo"http://www.seusite.com.br/campo1=".$rs['campo1']."&campo2=".$rs['campo2']."";
+// saida -> http://www.seusite.com.br/campo1=campo1&campo2=campo2
+//            $link = "<a href='http://172.17.72.39/certificador2/gerarpdf/gerar?email=$item'>CERTIFICADO</a>";
+//            $mail->Body = $corpo;
+//            $mail->AddAddress($item);
+//            $enviou = $mail->Send();
+//            $mail->ClearAllRecipients();  //Limpa os destinatários e os anexos (DEMORA MUITO)
+//            $mail->ClearAttachments();
+//        }
+}
+
+function utf8_encode_array($array) {
+    foreach ($array as $key => $value) {
+        $array[$key] = utf8_encode($value);
+    }
+    return($array);
+}
+
+function allow_admin_only($role) {
+    if ($role != 1) {
+        redirect('main');
+    }
+}
+
+//function criamenu($user_id, $user_role) {
+//
+//    if ($user_id != NULL) {
+//        switch ($user_role) {
+//            case 10:
+//                $menu = array(
+//                    'processos/meus_processos' => 'Meus Processos',
+//                );
+//                break;
+//            case 1:
+//                $menu = array(
+//                    'processos/meus_processos' => 'Meus Processos',
+//                    'main/noticias' => 'Notícias',
+//                    'cursos' => 'Cursos',
+//                    'polos' => 'Polos',
+//                    'editais' => 'Editais',
+//                    'inscricoes' => 'Inscrições',
+//                    'listas' => 'Listas',
+//                    'homologacoes' => 'Homologações',
+//                    'avaliacoes' => 'Avaliações',
+//                    'prematricula' => 'Pré-Matrícula',
+//                    'matricula' => 'Matrícula',
+//                );
+//                break;
+//            case 2:
+//
+//                break;
+//            default:
+//
+//                break;
+//        }
+//        return($menu);
+//    } else {
+//        return NULL;
+//    }
+//}
+//function retornaperfil($user_role) {
+//    switch ($user_role) {
+//        case 10:
+//            $role = "Usuário Padrão";
+//            break;
+//        case 1:
+//            $role = "Administrador";
+//            break;
+//
+//        default:
+//
+//            break;
+//    }
+//    return($role);
+//}
+//famt
+//Função recebe resultado do bd ($string) referente a nível de formação e exibe 
+//a nomenclatura correta, com acentuação;
+//function exibe_formacao($string) {
+//    $niveis = array(
+//        'tecnico' => 'Técnico',
+//        'graduacao' => 'Graduação Superior',
+//        'especializacao' => 'Especialização',
+//        'mestrado' => 'Mestrado',
+//        'doutorado' => 'Doutorado',
+//        'posdoutorado' => 'Pós Doutorado'
+//    );
+//    //caso não receba parâmetros (a $string será ''), a função retorna array para 
+//    //exibir todas as nomenclaturas.ex: usado nos dropdowns.
+//    switch ($string) {
+//        case 'tecnico':
+//            return 'Técnico';
+//            break;
+//
+//        case 'graduacao':
+//            return 'Graduação Superior';
+//            break;
+//
+//        case 'especializacao':
+//            return 'Especialização';
+//            break;
+//
+//        case 'mestrado':
+//            return 'Mestrado';
+//            break;
+//
+//        case 'doutorado':
+//            return 'Doutorado';
+//            break;
+//
+//        case 'posdoutorado':
+//            return 'Pós Doutorado';
+//            break;
+//
+//        case '1':
+//            $niveis = array(
+//                '' => 'Selecione',
+//                'tecnico' => 'Técnico',
+//                'graduacao' => 'Graduação Superior',
+//                'especializacao' => 'Especialização',
+//                'mestrado' => 'Mestrado',
+//                'doutorado' => 'Doutorado',
+//                'posdoutorado' => 'Pós Doutorado'
+//            );
+//            return $niveis;
+//
+//        default:
+//            return $niveis;
+//            break;
+//    }
+//}
+//
+//function homologacao_inscricao() {
+//    $array_homologacao = array(
+//        '0' => 'Aguardando Homologação',
+//        '1' => 'Homologado',
+//        '2' => 'Não Homologado',
+//        '10' => 'Qualquer Status');
+//    return $array_homologacao;
+//}
+//
+//function status_prematricula() {
+//    $array_prematricula = array(
+//        '0' => 'Aguardando Candidato',
+//        '1' => 'Não Realizada',
+//        '2' => 'Realizada Pendente',
+//        '3' => 'Realizada Concluída',
+//        '10' => 'Qualquer Status');
+//    return $array_prematricula;
+//}
+//
+//function status_matricula() {
+//    $array_matricula = array(
+//        '0' => 'Em Processamento',
+//        '1' => 'Pendente',
+//        '2' => 'Confirmada',
+//        '3' => 'Indeferida',
+//        '4' => 'Eliminado do Processo',
+//        '5' => 'Cancelado após matrícula',
+//        '10' => 'Qualquer Status');
+//    return $array_matricula;
+//}
+//function dados_usuarios() {
+//    $array_dados_usuarios = array(
+//        //tabela users
+//        'email' => 'E-mail',
+//        'cpf' => 'CPF',
+//        //tabela user_infos
+//        'nome' => 'Nome',
+//        'sexo' => 'Sexo',
+//        'nome_mae' => 'Nome da mãe',
+//        'nome_pai' => 'Nome do pai',
+//        'data_nasc' => 'Data de nascimento',
+//        'cidade_nasc' => 'Naturalidade',
+//        'estado_nasc' => 'Estado de nascimento',
+//        'pais_nasc' => 'País de nascimento',
+//        'nacionalidade' => 'Nacionalidade',
+//        'passaporte' => 'Passaporte',
+//        'endereco' => 'Endereço',
+//        'complemento' => 'Complemento',
+//        'bairro' => 'Bairro',
+//        'cidade' => 'Cidade',
+//        'cep' => 'CEP',
+//        'estado' => 'Estado',
+//        'pais' => 'País',
+//        'telefone_fixo_dd' => 'DDD(fixo)',
+//        'telefone_fixo_num' => 'Telefone fixo',
+//        'telefone_celular_dd' => 'DDD(cel)',
+//        'telefone_celular_num' => 'Telefone celular',
+//        //RG
+//        'rg_num' => 'RG',
+//        'rg_orgao_expeditor' => 'Órgão expedidor',
+//        'rg_estado' => 'Estado do RG',
+//        'rg_data_emissão' => 'Data de emissão do RG',
+//        //Alistamento militar
+//        'militar_num' => 'Alistamento militar',
+//        'militar_reparticao' => 'Repartição militar',
+//        'militar_data_emissão' => 'Data de emissão (militar)',
+//        'militar_tipo' => 'Tipo de certificado militar',
+//        //Título eleitoral
+//        'eleitor_num' => 'Título eleitoral',
+//        'eleitor_zona' => 'Zona eleitoral',
+//        'eleitor_secao' => 'Seção',
+//        'eleitor_data_emissao' => 'Data de emissão (título)',
+//        'eleitor_data_ultima_votacao' => 'Data da última votação',
+//        'eleitor_justificou' => 'Justificativa de eleição',
+//    );
+//    return $array_dados_usuarios;
+//}
+//opções para geração de lista: user_editals 
+//function dados_user_editals() {
+//    $array_dados_user_editals = array(
+//        'just_homologado' => 'Justificativa da inscrição',
+//        'just_prematricula' => 'Justificativa da pré-matrícula',
+//        'just_matricula' => 'Justificativa da matrícula',
+//        'pontuacao' => 'Pontuação',
+//    );
+//    return $array_dados_user_editals;
+//}
+//Função para utilizar mais de um botão no form ;
+//(ref. http://simplesideias.com.br/multiplos-botoes-submit-em-um-formulario)
+function multi_bt_form($name) {
+    $params = func_get_args();
+
+    foreach ($params as $name) {
+        if (isset($_POST[$name])) {
+            return $name;
+        }
+    }
+}
+
+/**
+ * Recebe a data em formato BR dd/mm/aaaa e retorna para inserir no mysql (yyyy-mm-dd).
+ * @param $data Data em formato BR dd/mm/aaaa.
+ * @return string Data em formato mysql yyyy-mm-dd
+ */
+function data_converte_br_mysql($data) {
+    $date = implode("-", array_reverse(explode("/", $data)));
+    return $date;
+}
+
+/**
+ * Recebe a data em formato mysql (yyyy-mm-dd) e retorna BR dd/mm/aaaa.
+ * @param $data Data em formato mysql (yyyy-mm-dd).
+ * @return string Data em formato BR dd/mm/aaaa.
+ */
+function data_converte_mysql_br($data) {
+    $date = implode("/", array_reverse(explode("-", $data)));
+    return $date;
+}
+
+function converte_dataString_extenso($data) {
+    $date = explode('/', $data);
+    $mes = NULL;
+    switch ($date[1]) {//mês
+        case '01':
+            $mes = 'janeiro';
+            break;
+        case '02':
+            $mes = 'fevereiro';
+            break;
+        case '03':
+            $mes = 'março';
+            break;
+        case '04':
+            $mes = 'abril';
+            break;
+        case '05':
+            $mes = 'maio';
+            break;
+        case '06':
+            $mes = 'junho';
+            break;
+        case '07':
+            $mes = 'julho';
+            break;
+        case '08':
+            $mes = 'agosto';
+            break;
+        case '09':
+            $mes = 'setembro';
+            break;
+        case '10':
+            $mes = 'outubro';
+            break;
+        case '11':
+            $mes = 'novembro';
+            break;
+        case '12':
+            $mes = 'dezembro';
+            break;
+
+        default:
+            break;
+    }
+    return "$date[0] de $mes de $date[2]";
+}
+
+function converte_dataString_mesAno($data) {
+    $date = explode('/', $data);
+    $mes = NULL;
+    switch ($date[1]) {//mês
+        case '01':
+            $mes = 'janeiro';
+            break;
+        case '02':
+            $mes = 'fevereiro';
+            break;
+        case '03':
+            $mes = 'março';
+            break;
+        case '04':
+            $mes = 'abril';
+            break;
+        case '05':
+            $mes = 'maio';
+            break;
+        case '06':
+            $mes = 'junho';
+            break;
+        case '07':
+            $mes = 'julho';
+            break;
+        case '08':
+            $mes = 'agosto';
+            break;
+        case '09':
+            $mes = 'setembro';
+            break;
+        case '10':
+            $mes = 'outubro';
+            break;
+        case '11':
+            $mes = 'novembro';
+            break;
+        case '12':
+            $mes = 'dezembro';
+            break;
+
+        default:
+            break;
+    }
+    return "$mes de $date[2]";
+}
+
+function validaCPF($cpf) {
+
+    // Extrai somente os números
+    $cpf = preg_replace('/[^0-9]/is', '', $cpf);
+
+    // Verifica se foi informado todos os digitos corretamente
+    if (strlen($cpf) != 11) {
+        return false;
+    }
+
+    // Verifica se foi informada uma sequência de digitos repetidos. Ex: 111.111.111-11
+    if (preg_match('/(\d)\1{10}/', $cpf)) {
+        return false;
+    }
+
+    // Faz o calculo para validar o CPF
+    for ($t = 9; $t < 11; $t++) {
+        for ($d = 0, $c = 0; $c < $t; $c++) {
+            $d += $cpf[$c] * (($t + 1) - $c);
+        }
+        $d = ((10 * $d) % 11) % 10;
+        if ($cpf[$c] != $d) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function frequecia_em_porcentagem($ch = NULL, $faltas_horas = NULL) {
+    if ($ch > 0) {
+        $freq = ceil(100 - ($faltas_horas * 100) / $ch);
+        return $freq;
+    }
+}
+
+function validaEmail($email) {
+    $email = strtolower($email);
+
+    if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+
+//        //trecho para validar e-mail UFABC, GMAIL
+//        $ar = strpos($email, '@');
+//        $sub = substr($email, $ar+1);
+//        
+//        if(strrpos($email, 'ufabc') > 0){//valida email UFABC
+//            if($sub == 'ufabc.edu.br' || $sub == 'aluno.ufabc.edu.br'){
+//                $e = TRUE;
+//            } else {
+//                $e = FALSE;
+//            }
+//        }
+//        
+//        if(strrpos($email, 'gmail') > 0){//valida email GMAIL
+//            if($sub == 'gmail.com'){
+//                $e = TRUE;
+//            } else {
+//                $e = FALSE;
+//            }
+//        }
+        $e = TRUE; // comentar essa linha se quiser ativar validação acima
+    } else {
+        $e = FALSE;
+    }
+    return $e;
+
+//    //verifica se e-mail esta no formato correto de escrita
+//    if (!preg_match('/^([a-zA-Z0-9.-_])*([@])([a-z0-9]).([a-z]{2,3})/', $email)) {
+//        $mensagem = 'E-mail Inválido!';
+//        return $mensagem;
+//    } else {
+//        //Valida o dominio
+//        $dominio = explode('@', $email);
+//        if (!checkdnsrr($dominio[1], 'A')) {
+//            $mensagem = 'E-mail Inválido!';
+//            return $mensagem;
+//        } else {
+//            return true;
+//        } // Retorno true para indicar que o e-mail é valido
+//    }
+}
+
+function formatCpf($value) {//funcao para formatar o CPF
+    $cpf = preg_replace("/\D/", '', $value);
+
+    if (strlen($cpf) === 11) {
+        return preg_replace("/(\d{3})(\d{3})(\d{3})(\d{2})/", "\$1.\$2.\$3-\$4", $cpf);
+    }
+}
+
+function exibe_doc($tipo_doc, $num_doc) {
+
+    if (strcasecmp($tipo_doc, 'CPF') == 0) {//verifica se é CPF para formatar
+        $num_doc = formatCpf($num_doc);
+    }
+
+    $exibe_doc = NULL;
+    if ($tipo_doc != '') {
+        $exibe_doc = 'portador(a) do(a) ' . mb_strtoupper($tipo_doc) . ': ' . strtoupper($num_doc) . ', ';
+        return $exibe_doc;
+    } else {
+        return NULL;
+    }
+}
