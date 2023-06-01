@@ -14,7 +14,7 @@ $fpdf->Image('images/certificado_netel.png', 5, -5, 288);
 $intro = utf8_decode("O Núcleo Educacional de Tecnologias e Línguas da Universidade Federal do ABC, através de sua Divisão de Idiomas, nos termos da lei Nº 11.145 de criação da Fundação Universidade federal do ABC, em 26 de Julho de 2005 e atendendo os termos da Portaria do Ministério de Estado da Justiça e Segurança Pública Nº 623 de 13 de Novembro de 2020, tendo em vista o resultados das avaliações presenciais, outorga a");
 $nomeAluno = utf8_decode($aluno['nome']);
 
-$texto = utf8_decode("de nacionalidade XXXX, " . exibe_doc($aluno['tipo_doc'], $aluno['num_doc'])."o CERTIFICADO DE PROFICIÊNCIA EM LÍNGUA PORTUGUESA de nível indicado neste documento, válido perante instituições nacionais e estrangeiras para todos os fins de direito.");
+$texto = utf8_decode("de nacionalidade " . $aluno['nacionalidade'] . ", " . exibe_doc($aluno['tipo_doc'], $aluno['num_doc'])."o CERTIFICADO DE PROFICIÊNCIA EM LÍNGUA PORTUGUESA de nível indicado neste documento, válido perante instituições nacionais e estrangeiras para todos os fins de direito.");
 
 $data = utf8_decode("Santo André, $dataCertificado");
 
@@ -39,8 +39,8 @@ $fpdf->SetXY(45, 135);
 $fpdf->MultiCell(0, 10, $data, 0, 'C');
 
 //assinatura professor (esquerda)
-$assinatura = 'images/assinaturas/ass_trans_angela.png';
-$fpdf->Image($assinatura, 50, 150, 53);
+$assinatura = 'images/assinaturas/ass_trans_mariangela_nova.png';
+$fpdf->Image($assinatura, 50, 150, 80);
 
 //nome do professor
 $fpdf->SetFont('arial', 'B');
@@ -51,8 +51,8 @@ $fpdf->Text(60, 187, utf8_decode("Siape xxxxxxx"));
 
 
 //assinatura jeniffer (centro)
-$assinatura = 'images/assinaturas/ass_trans_jeni.png';
-$fpdf->Image($assinatura, 115, 145, 85);
+$assinatura = 'images/assinaturas/ass_trans_jeni_nova.png';
+$fpdf->Image($assinatura, 115, 145, 100);
 
 $fpdf->SetXY(35, 165);
 $fpdf->SetFont('arial', 'B');
@@ -68,9 +68,9 @@ $fpdf->SetXY(35, 183); //$fpdf->SetX(25);//config centralizado
 $fpdf->MultiCell(0, 7, utf8_decode("Siape xxxxxxx"), 0, 'C');
 
 //assinatura angela (direita)
-$assinatura = 'images/assinaturas/ass_trans_angela.png';
+$assinatura = 'images/assinaturas/ass_trans_angela_nova.png';
 $coordenador = utf8_decode("Angela Terumi Fushita");
-$fpdf->Image($assinatura, 220, 150, 53);
+$fpdf->Image($assinatura, 220, 150, 100);
 
 //nome do coordenador
 $fpdf->SetXY(210, 165);
@@ -200,7 +200,7 @@ $fpdf->MultiCell(253, 7, utf8_decode("Conceito da primeira...:"), 0, 'J');
 QRcode::png(base_url() . 'validar/?cod_validacao=' . $id_alunocurso . $cod_validacao, './phpqrcode/img/qrcode_temp.png');
 $fpdf->Image('./phpqrcode/img/qrcode_temp.png', 130, 160, 35);
 //link
-$fpdf->SetXY(115, 193);
+$fpdf->SetXY(128, 193);
 $fpdf->SetFont('arial', 'U', 11);
 $fpdf->SetTextColor(0, 0, 255);
 

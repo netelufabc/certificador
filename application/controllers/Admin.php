@@ -42,7 +42,7 @@ class Admin extends CI_Controller {
 //            );
 //            $this->load->view('main', $dados);
 //        } //else {
-        if (!isset($_SESSION['status']) /*|| !$_SESSION['status'] == 1*/) {
+        if (!isset($_SESSION['status']) /* || !$_SESSION['status'] == 1 */) {
             $dados = array(
                 'view_header' => 'view_header.php',
                 'view_conteudo' => 'login.php',
@@ -255,7 +255,7 @@ class Admin extends CI_Controller {
                 'created' => date('Y-m-d H:i:s')
             );
             $id_curso = $this->curso_model->set_curso($dados_form);
-            
+
             $this->session->set_flashdata('novo_curso_ok', "Evento criado com sucesso!");
             redirect('Admin');
         } else {
@@ -466,9 +466,8 @@ class Admin extends CI_Controller {
         $objPHPExcel = $objReader->load($file_path); //acessa o arquivo que foi salvo no server
         //pegar total de colunas
         $plan = 0; //1 define a segunda aba de planilha do excel (inicia em 0)
-        $colunas = $objPHPExcel->setActiveSheetIndex($plan)->getHighestColumn();
-        $total_colunas = PHPExcel_Cell::columnIndexFromString($colunas);
-
+        // $colunas = $objPHPExcel->setActiveSheetIndex($plan)->getHighestColumn();
+        //$total_colunas = PHPExcel_Cell::columnIndexFromString($colunas);
         //pegar total de linhas
         $total_linhas = $objPHPExcel->setActiveSheetIndex($plan)->getHighestRow();
 
@@ -477,7 +476,7 @@ class Admin extends CI_Controller {
         $valor = NULL;
         for ($linha = 2; $linha <= $total_linhas; $linha++) {//linha 2 para pegar o cabeçalho
             $row = array();
-            for ($coluna = 0; $coluna < 7; $coluna++) {
+            for ($coluna = 0; $coluna < 10; $coluna++) {//quantidade de colunas para ler
                 if ($linha == 2) {
                     array_push($keys, $objPHPExcel->getActiveSheet()->getCellByColumnAndRow($coluna, $linha)->getValue());
                 } else {
@@ -492,10 +491,10 @@ class Admin extends CI_Controller {
             if (count($keys) > 0 && count($row) > 0) {
                 $linha_de_registro = array_combine($keys, $row);
                 $ee = trim($linha_de_registro['email']);
-				
+
                 $e = validaEmail($ee);
                 //$c = validaCPF($linha_de_registro['cpf']);
-                if (/*($c || $linha_de_registro['num_doc'] == NULL) &&*/ $e) {
+                if (/* ($c || $linha_de_registro['num_doc'] == NULL) && */ $e) {
                     $aluno = $this->cadastrarAlunoPorCsv($linha_de_registro); //insere na tabela alunos
                     $cod_validacao = $this->randomPassword(); //gera cod. de validacao
                     $dadosEmailCert = array(
@@ -505,13 +504,20 @@ class Admin extends CI_Controller {
                         'conceito' => strtoupper($linha_de_registro['conceito']),
                         'cod_validacao' => $cod_validacao,
                         'aprovado' => strtolower($linha_de_registro['aprovado']),
-                        'faltas_em_horas' => $linha_de_registro['faltas_em_horas'],
+                        'faltas_em_horas' => $linha_de_registro['faltas_em_horas'],                        
                     );
 
-                    $this->cadastrarAlunoCurso($dadosEmailCert, $dados_curso); //insere na tabela alunocurso
+                    $id_alunocurso = $this->cadastrarAlunoCurso($dadosEmailCert, $dados_curso); //insere na tabela alunocurso
+
+                    $dadosNotas = array(
+                        'nota1' => $linha_de_registro['nota1'],
+                        'nota2' => $linha_de_registro['nota2']
+                    );
+
+                    $this->insereNotas($dadosNotas, $dados_curso, $id_alunocurso); //insere na tabela notas
                 } else {
                     //falta implementar tratamento caso tenha email incorreto
-					echo "e-mail inválido";
+                    echo "e-mail inválido";
                     return false;
                 }
             }
@@ -537,29 +543,30 @@ class Admin extends CI_Controller {
             unset($rowAluno['conceito']);
             unset($rowAluno['aprovado']);
             unset($rowAluno['faltas_em_horas']);
+            unset($rowAluno['nota1']);
+            unset($rowAluno['nota2']);
             $rowAluno['id_aluno'] = $this->aluno_model->set_aluno($rowAluno); //inserindo na tabela alunos
             return $rowAluno;
         } else {
-            //aluno já cadastrado; verificar se já consta CPF/RNE
+            //aluno já cadastrado; verificar se já consta CPF/RNE; verificar se consta nacionalidade
 
-            if ($rowAluno['num_doc'] != '' && $aluno['num_doc'] == ''){
+            if ($rowAluno['num_doc'] != '' && $aluno['num_doc'] == '') {
                 $aluno['num_doc'] = $rowAluno['num_doc'];
             }
-            if ($rowAluno['tipo_doc'] != '' && $aluno['tipo_doc'] == ''){
+            if ($rowAluno['tipo_doc'] != '' && $aluno['tipo_doc'] == '') {
                 $aluno['tipo_doc'] = $rowAluno['tipo_doc'];
             }
-                        
+            if ($rowAluno['nacionalidade'] != '' && $aluno['nacionalidade'] == '') {
+                $aluno['nacionalidade'] = $rowAluno['nacionalidade'];
+            }
+
             $dados = array(
                 'id_aluno' => $aluno['id_aluno'],
                 'num_doc' => $aluno['num_doc'],
                 'tipo_doc' => $aluno['tipo_doc'],
+                'nacionalidade' => $aluno['nacionalidade']
             );
-
-            //if ($rowAluno['cpf'] != '' && $aluno['cpf'] == '' || $rowAluno['rne'] != '' && $aluno['rne'] == '') {
-                $this->aluno_model->update_Cpf_Rne($dados);
-                //$aluno['cpf'] = $rowAluno['cpf'];
-                //$aluno['rne'] = $rowAluno['rne'];
-            //}
+            $this->aluno_model->update_Cpf_Rne($dados);
         }
         return $aluno;
     }
@@ -579,6 +586,21 @@ class Admin extends CI_Controller {
         //fim alteração GUC 15/01/2020
         // }
         // return $id_alunocurso;
+    }
+
+    public function insereNotas($dadosNotas, $dados_curso, $id_alunocurso) {
+
+        if ($dadosNotas['nota1'] != '' || $dadosNotas['nota2'] != '') {
+            if (count($this->Notas_model->get_notas($id_alunocurso)) > 0) {
+                //atualiza notas
+                echo "existe";
+            } else {
+                //cadastra notas
+                echo "cadastra";
+            }
+        } else {
+            return;
+        }
     }
 
     public function listarCertificadosAluno() {
@@ -673,23 +695,21 @@ class Admin extends CI_Controller {
 
     public function confirm_del() {
 
-        if($this->uri->segment(4) && $this->uri->segment(5)){//deletar participante de curso
+        if ($this->uri->segment(4) && $this->uri->segment(5)) {//deletar participante de curso
             $id_participante = $this->uri->segment(4);
             $participante = $this->aluno_model->get_aluno($id_participante);
             $id_curso = $this->uri->segment(5);
             $curso = $this->curso_model->get_curso($id_curso);
-            
+
             $dados = array(
                 'view_header' => 'view_header.php',
                 'view_conteudo' => 'view_confirm_del.php',
                 'view_footer' => 'view_footer.php',
-                'id_alunocurso'=> $this->uri->segment(3),
+                'id_alunocurso' => $this->uri->segment(3),
                 'participante' => $participante,
                 'curso' => $curso
             );
-            
         } else {//deletar evento
-
             $id_curso = $this->uri->segment(3);
             $curso = $this->curso_model->get_curso($id_curso);
 
@@ -741,11 +761,10 @@ class Admin extends CI_Controller {
         $this->load->view('main', $dados);
     }
 
-    public function editar_aluno_dados_pessoais(){//famt
-     
+    public function editar_aluno_dados_pessoais() {//famt
         $id_aluno = $this->uri->segment(3);
         $dados_aluno = $this->aluno_model->get_aluno($id_aluno);
-        
+
         $this->form_validation->set_rules('nomeAluno', 'NOME DO ALUNO', 'trim|required');
         $this->form_validation->set_rules('email', 'E-MAIL', 'required');
         if ($this->form_validation->run() == TRUE) {
@@ -756,19 +775,17 @@ class Admin extends CI_Controller {
 
             $this->aluno_model->update_aluno($dados_aluno, $id_curso, $id_aluno);
         }
-        
     }
-    
-    
+
     public function editar_aluno() {
 
         $id_aluno = $this->uri->segment(3);
-        if($this->uri->segment(4) != NULL){
+        if ($this->uri->segment(4) != NULL) {
             $id_curso = $this->uri->segment(4);
         } else {
             $id_curso = NULL;
         }
-        
+
 //        $id_nivel_idiomas = $this->Model_nivel_idiomas->GetIdNivelIdiomas($id_aluno, $id_curso);
 
         $dados_aluno = $this->aluno_model->get_aluno_por_curso($id_aluno, $id_curso);
