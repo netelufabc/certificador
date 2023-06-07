@@ -13,20 +13,12 @@ class GerarPdf extends CI_Controller {
         $this->load->model('curso_model');
         $this->load->model('alunocurso_model');
         $this->load->model('certificado_model');
-        //$this->load->model('Model_nivel_idiomas');
+        $this->load->model('Notas_model');
     }
 
     public function index() {
         
     }
-
-//    public function formatCpf($value) {//funcao para formatar o CPF
-//        $cpf = preg_replace("/\D/", '', $value);
-//
-//        if (strlen($cpf) === 11) {
-//            return preg_replace("/(\d{3})(\d{3})(\d{3})(\d{2})/", "\$1.\$2.\$3-\$4", $cpf);
-//        }
-//    }
 
     public function gerarFpdf() {
 
@@ -35,13 +27,12 @@ class GerarPdf extends CI_Controller {
         $id_alunocurso = $this->uri->segment(5);
         $cod_validacao = $this->uri->segment(6);
 
+        $notas = $this->Notas_model->get_notas($id_alunocurso);
         $alunocurso = $this->alunocurso_model->get_alunocurso($id_alunocurso, $cod_validacao);
         if($alunocurso['aprovado'] == 'n' || $alunocurso['aprovado'] == 'N'){
             echo "<div style='color: red; text-align: center; padding-top: 100px'><h3>Não atingiu os requisitos para obter o certificado</h3></div>";
         }elseif ($alunocurso != FALSE && $alunocurso != NULL && $alunocurso != '') {
             $aluno = $this->aluno_model->get_aluno($alunocurso['id_aluno']);
-
-//            $aluno['num_doc'] = $this->formatCpf($aluno['num_doc']); //chama formatar cpf
 
             $curso = $this->curso_model->get_curso($alunocurso['id_curso']);
             $certificado = $this->certificado_model->get_certificado($curso['id_certificado']);

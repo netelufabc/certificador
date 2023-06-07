@@ -6,6 +6,7 @@ class Admin extends CI_Controller {
 
     function __construct() {
         parent::__construct();
+        $this->load->model('Notas_model');
         $this->load->model('aluno_model');
         $this->load->model('curso_model');
         $this->load->model('alunocurso_model');
@@ -504,7 +505,7 @@ class Admin extends CI_Controller {
                         'conceito' => strtoupper($linha_de_registro['conceito']),
                         'cod_validacao' => $cod_validacao,
                         'aprovado' => strtolower($linha_de_registro['aprovado']),
-                        'faltas_em_horas' => $linha_de_registro['faltas_em_horas'],                        
+                        'faltas_em_horas' => $linha_de_registro['faltas_em_horas'],
                     );
 
                     $id_alunocurso = $this->cadastrarAlunoCurso($dadosEmailCert, $dados_curso); //insere na tabela alunocurso
@@ -590,16 +591,12 @@ class Admin extends CI_Controller {
 
     public function insereNotas($dadosNotas, $dados_curso, $id_alunocurso) {
 
-        if ($dadosNotas['nota1'] != '' || $dadosNotas['nota2'] != '') {
-            if (count($this->Notas_model->get_notas($id_alunocurso)) > 0) {
-                //atualiza notas
-                echo "existe";
-            } else {
-                //cadastra notas
-                echo "cadastra";
-            }
+        if (count($this->Notas_model->get_notas($id_alunocurso)) > 0) {//se já tem notas cadastradas
+            //atualiza notas
+            $this->Notas_model->update_notas($id_alunocurso, $dadosNotas);
         } else {
-            return;
+            //cadastra notas
+            $this->Notas_model->set_notas($id_alunocurso, $dadosNotas);
         }
     }
 

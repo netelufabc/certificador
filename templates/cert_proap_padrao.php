@@ -6,7 +6,6 @@ $this->load->helper('custom');
 
 $fpdf = new FPDF();
 
-//$fpdf->SetLeftMargin(50);
 //página 1
 $fpdf->AddPage('L', 'A4');
 $fpdf->SetAutoPageBreak(false); //essa config possibilita definir margin inferior
@@ -22,8 +21,7 @@ $data = utf8_decode("Santo André, $dataCertificado");
 //trecho da introdução
 $fpdf->SetFont('arial', '', 18);
 $fpdf->SetXY(48, 55);
-//$fpdf->SetRightMargin(10);
-//$fpdf->SetLeftMargin(50);
+
 $fpdf->MultiCell(225, 10, $intro, 0, 'C'); //quarto campo (0/1) exibe borda do campo
 //nome do aluno
 $fpdf->SetXY(48, 80);
@@ -41,12 +39,11 @@ $fpdf->SetXY(170, 145);
 $fpdf->MultiCell(0, 10, $data, 0, 'C');
 
 
-$assinatura = 'images/assinaturas/ass_trans_janaina.png';
+$assinatura = 'images/assinaturas/ass_trans_claudia.png';
 $coordenador = utf8_decode("Cláudia Regina Vieira");
-$fpdf->Image($assinatura, 208, 142, 53);
+$fpdf->Image($assinatura, 194, 145,70);
 
 //nome do coordenador
-//        $fpdf->SetX(25);//config centralizado
 $fpdf->SetXY(170, 180);
 $fpdf->MultiCell(0, 10, $coordenador, 0, 'C');
 
@@ -54,20 +51,14 @@ $fpdf->MultiCell(0, 10, $coordenador, 0, 'C');
 $fpdf->SetXY(171, 190); //$fpdf->SetX(25);//config centralizado
 $fpdf->MultiCell(0, 7, utf8_decode("Pró-reitora da PROAP"), 0, 'C');
 
-
-// .$alunocurso['faltas_em_horas']. " horas de faltas, obtendo conceito final \"" . $alunocurso['conceito'] . "\"."
-//        . " O curso foi ministrado no período de " . $dataIni . " a " . $dataFim . " com carga horária de " . $curso['cargaHoraria'] . " horas."
 //página 2
 $fpdf->AddPage('L', 'A4');
 $fpdf->SetAutoPageBreak(false); //essa config possibilita definir margin inferior    
 
-
 $titulo = "Módulos do curso:";
 
-//$desc_nvl = NiveisLinguas();
-
 $fpdf->SetY(20);
-$fpdf->SetFont('arial', 'B', 11);
+$fpdf->SetFont('arial', 'B', 13);
 $fpdf->MultiCell(277, 10, utf8_decode($titulo), 0, 'C');
 
 $fpdf->SetXY(43, 30);
@@ -114,35 +105,6 @@ $fpdf->SetXY(43, 115);
 $fpdf->MultiCell(150,7.5,utf8_decode("Vivência das bancas"),"LRBT",'L');
 $fpdf->SetXY(193, 115);
 $fpdf->MultiCell(60,7.5,utf8_decode("Profª. Maria Lucia Almeida"),"LRBT",'L');
-
-//Exibe a descrição dos níveis 
-//$fpdf->SetXY(22, 60);
-////$fpdf->SetRightMargin(58);
-//$fpdf->SetFont('arial', '', 12);
-//$fpdf->MultiCell(253, 7, utf8_decode($curso['nivel'] . " - " . $desc_nvl[$curso['nivel']]), 0, 'J');
-
-//Atributos do aluno no curso
-//$fpdf->SetXY(70, 105);
-//$fpdf->SetFont('arial', 'B', 11);
-//$fpdf->SetFillColor(255,255,255);
-//$fpdf->MultiCell(30, 5, utf8_decode("Carga Horária do módulo"), "LT", 'C');
-//
-//$fpdf->SetXY(100, 105);
-//$fpdf->MultiCell(30, 5, utf8_decode("Frequência\ndo aluno"),"LT", 'C');
-//$fpdf->SetXY(130, 105);
-//$fpdf->MultiCell(20, 5, utf8_decode("Conceito final"), "LT", 'C');
-//$fpdf->SetXY(150, 105);
-//$fpdf->MultiCell(50, 5, utf8_decode("Período\ndo módulo"), "LT",'C');
-//$fpdf->SetXY(200, 105);
-//$fpdf->MultiCell(25, 5, utf8_decode("Nível\nQCER"), "LTR", 'C');
-//
-//$fpdf->SetXY(70, 115);
-//$fpdf->Cell(30, 10, $curso['cargaHoraria'] . " horas", "LB", 0, 'C');
-//$freq = 100 - ($alunocurso['faltas_em_horas'] * 100) / $curso['cargaHoraria'];
-//$fpdf->Cell(30, 10, ceil($freq) . "%", "LB", 0, 'C');//arredondamento para cima
-//$fpdf->Cell(20, 10, $alunocurso['conceito'], "LB", 0, 'C');
-//$fpdf->Cell(50, 10, $dataIni . ' a ' . $dataFim, "LB", 0, 'C');
-//$fpdf->Cell(25, 10, $curso['nivel'], "LRB", 0, 'C');
 
 //qrcode
 QRcode::png(base_url() . 'validar/?cod_validacao=' . $id_alunocurso . $cod_validacao, './phpqrcode/img/qrcode_temp.png');
